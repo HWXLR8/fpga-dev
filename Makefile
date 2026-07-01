@@ -11,6 +11,7 @@ CONFIG_FILE     := install_config.txt
 BOARD           := pynq_z2
 BIT_FILE        := $(PROJ_DIR)/hello.bit
 TCL_SCRIPT      := hello.tcl
+VERILOG_SOURCES := $(wildcard $(PROJ_DIR)/*.v)
 
 VIVADO_RUN = docker run --rm -it \
 	--network host \
@@ -36,8 +37,12 @@ verify: ## Confirm Vivado runs and print its version
 shell: ## Drop into an interactive shell inside the Vivado container
 	$(VIVADO_RUN) bash
 
+.PHONY: lint
+lint: ## Check Verilog syntax with iverilog
+	iverilog -tnull $(VERILOG_SOURCES)
+
 .PHONY: build
-build: ## Run synth -> place -> route -> bitstream via hello.tcl
+build: lint ## Run synth -> place -> route -> bitstream via hello.tcl
 	@mkdir -p "$(PROJ_DIR)"
 	$(VIVADO_RUN) bash -c "source /opt/Xilinx/$(VIVADO_VERSION)/Vivado/settings64.sh && cd /proj && vivado -mode batch -source $(TCL_SCRIPT)"
 
