@@ -9,10 +9,14 @@ BOARD           := pynq_z2
 BIT_FILE        := $(PROJ_DIR)/pynq_z2_rtl.bit
 TCL_SCRIPT      := tcl/build_bitstream.tcl
 SETUP_SCRIPT    := tcl/setup_project.tcl
-VERILOG_SOURCES := $(PROJ_DIR)/src/blinky.v
+LINT_SOURCES    := $(filter-out $(PROJ_DIR)/src/fpga_top.v,$(wildcard $(PROJ_DIR)/src/*.v))
 BUILD_INPUTS    := $(wildcard $(PROJ_DIR)/src/*.v) \
                    $(wildcard $(PROJ_DIR)/xdc/*.xdc) \
                    $(PROJ_DIR)/tcl/build_bitstream.tcl
+# colors
+GREEN := \033[1;32m
+RED   := \033[1;31m
+RESET := \033[0m
 
 VIVADO_RUN = docker run --rm -it \
 	-u "$$(id -u):$$(id -g)" \
@@ -47,18 +51,24 @@ shell: ## Drop into an interactive shell inside the Vivado container
 
 .PHONY: lint
 lint: ## Check Verilog syntax with iverilog
-	iverilog -tnull $(VERILOG_SOURCES)
+	iverilog -tnull $(LINT_SOURCES)
 
 .PHONY: setup
 setup: ## Create Vivado project and block design
 	@mkdir -p "$(PROJ_DIR)"
-	$(VIVADO_RUN) bash -c "source /opt/Xilinx/Vivado/$(VIVADO_VERSION)/settings64.sh && cd /proj && vivado -mode batch -source $(SETUP_SCRIPT)"
+	@printf "==> Setting up Vivado project...\n"
+	@$(VIVADO_RUN) bash -c "source /opt/Xilinx/Vivado/$(VIVADO_VERSION)/settings64.sh && cd /proj && vivado -mode batch -source $(SETUP_SCRIPT)" && \
+		printf "$(GREEN)SUCCESS! Vivado project setup complete$(RESET)\n" || \
+		{ rc=$$?; printf "$(RED)FAIL! Vivado project setup failed$(RESET)\n"; exit $$rc; }
 
 .PHONY: build
 build: lint $(BIT_FILE) ## Build bitstream from existing Vivado project
 
 $(BIT_FILE): $(BUILD_INPUTS)
-	$(VIVADO_RUN) bash -c "source /opt/Xilinx/Vivado/$(VIVADO_VERSION)/settings64.sh && cd /proj && vivado -mode batch -source $(TCL_SCRIPT)"
+	@printf "==> Building bitstream...\n"
+	@$(VIVADO_RUN) bash -c "source /opt/Xilinx/Vivado/$(VIVADO_VERSION)/settings64.sh && cd /proj && vivado -mode batch -source $(TCL_SCRIPT)" && \
+		printf "$(GREEN)SUCCESS! bitstream generated: $(BIT_FILE)$(RESET)\n" || \
+		{ rc=$$?; printf "$(RED)FAIL! bitstream build failed$(RESET)\n"; exit $$rc; }
 
 .PHONY: rebuild
 rebuild: clean setup ## Clean and recreate Vivado project from scratch
@@ -80,7 +90,7 @@ flash: ## Flash the built bitstream to the PYNQ-Z2 over JTAG
 	openFPGALoader -b $(BOARD) "$(BIT_FILE)"
 
 .PHONY: all
-all: install setup build flash ## Full pipeline: install, setup, build bitstream, flash board
+all: build flash ## build bitstream, flash board
 
 .PHONY: cold
 cold: flash init ## Flash board and initialize PS7 after cold boot

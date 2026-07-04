@@ -1,6 +1,7 @@
 module fpga_top(
-  input  btn,
-  output led,
+  input        btn,
+  output       led,
+  output       uart_tx,
 
   inout [14:0] DDR_addr,
   inout [2:0]  DDR_ba,
@@ -58,7 +59,8 @@ module fpga_top(
   blinky user_logic (
     .clk(clk),
     .btn(btn),
-    .led(led)
+    .led(led),
+    .uart_tx(uart_tx)
   );
 
 endmodule
