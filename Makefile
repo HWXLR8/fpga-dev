@@ -11,9 +11,12 @@ CONFIG_FILE     := install_config.txt
 BOARD           := pynq_z2
 BIT_FILE        := $(PROJ_DIR)/pynq_z2_rtl.bit
 TCL_SCRIPT      := tcl/build_bitstream.tcl
+SETUP_SCRIPT    := tcl/setup_project.tcl
 VERILOG_SOURCES := $(PROJ_DIR)/src/blinky.v
 
 VIVADO_RUN = docker run --rm -it \
+	-u "$$(id -u):$$(id -g)" \
+	-e HOME=/tmp \
 	--network host \
 	-v "$(INSTALL_DIR):/opt/Xilinx" \
 	-v "$(PROJ_DIR):/proj" \
@@ -42,10 +45,17 @@ shell: ## Drop into an interactive shell inside the Vivado container
 lint: ## Check Verilog syntax with iverilog
 	iverilog -tnull $(VERILOG_SOURCES)
 
-.PHONY: build
-build: lint ## Run synth -> place -> route -> bitstream via Tcl
+.PHONY: setup
+setup: ## Create Vivado project and block design
 	@mkdir -p "$(PROJ_DIR)"
+	$(VIVADO_RUN) bash -c "source /opt/Xilinx/Vivado/$(VIVADO_VERSION)/settings64.sh && cd /proj && vivado -mode batch -source $(SETUP_SCRIPT)"
+
+.PHONY: build
+build: lint ## Build bitstream from existing Vivado project
 	$(VIVADO_RUN) bash -c "source /opt/Xilinx/Vivado/$(VIVADO_VERSION)/settings64.sh && cd /proj && vivado -mode batch -source $(TCL_SCRIPT)"
+
+.PHONY: rebuild
+rebuild: clean setup ## Clean and recreate Vivado project from scratch
 
 .PHONY: clean
 clean: ## Remove generated project files
@@ -64,13 +74,16 @@ flash: ## Flash the built bitstream to the PYNQ-Z2 over JTAG
 	openFPGALoader -b $(BOARD) "$(BIT_FILE)"
 
 .PHONY: all
-all: install build flash ## Full pipeline: install Vivado, build bitstream, flash board
+all: install setup build flash ## Full pipeline: install, setup, build bitstream, flash board
 
 .PHONY: cold
 cold: flash init ## Flash board and initialize PS7 after cold boot
 
+.PHONY: init
 init: ## Initialize PS7 over JTAG
 	docker run --rm -it \
+		-u "$$(id -u):$$(id -g)" \
+		-e HOME=/tmp \
 		--network host \
 		--privileged \
 		-v /dev/bus/usb:/dev/bus/usb \
