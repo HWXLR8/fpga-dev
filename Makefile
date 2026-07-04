@@ -9,9 +9,9 @@ PROJ_DIR        := $(CURDIR)/proj
 TARBALL         := FPGAs_AdaptiveSoCs_Unified_2023.2_1013_2256.tar.gz
 CONFIG_FILE     := install_config.txt
 BOARD           := pynq_z2
-BIT_FILE        := $(PROJ_DIR)/hello.bit
-TCL_SCRIPT      := hello.tcl
-VERILOG_SOURCES := $(wildcard $(PROJ_DIR)/*.v)
+BIT_FILE        := $(PROJ_DIR)/pynq_z2_rtl.bit
+TCL_SCRIPT      := tcl/build_bitstream.tcl
+VERILOG_SOURCES := $(PROJ_DIR)/src/blinky.v
 
 VIVADO_RUN = docker run --rm -it \
 	--network host \
@@ -43,13 +43,13 @@ lint: ## Check Verilog syntax with iverilog
 	iverilog -tnull $(VERILOG_SOURCES)
 
 .PHONY: build
-build: lint ## Run synth -> place -> route -> bitstream via hello.tcl
+build: lint ## Run synth -> place -> route -> bitstream via Tcl
 	@mkdir -p "$(PROJ_DIR)"
 	$(VIVADO_RUN) bash -c "source /opt/Xilinx/Vivado/$(VIVADO_VERSION)/settings64.sh && cd /proj && vivado -mode batch -source $(TCL_SCRIPT)"
 
 .PHONY: clean
 clean: ## Remove generated project files
-	rm -rf "$(PROJ_DIR)/hello_proj" "$(BIT_FILE)"
+	rm -rf "$(PROJ_DIR)/pynq_z2_rtl" "$(BIT_FILE)"
 
 .PHONY: detect
 detect: ## Detect connected JTAG boards via openFPGALoader
@@ -66,6 +66,9 @@ flash: ## Flash the built bitstream to the PYNQ-Z2 over JTAG
 .PHONY: all
 all: install build flash ## Full pipeline: install Vivado, build bitstream, flash board
 
+.PHONY: cold
+cold: flash init ## Flash board and initialize PS7 after cold boot
+
 init: ## Initialize PS7 over JTAG
 	docker run --rm -it \
 		--network host \
@@ -77,7 +80,7 @@ init: ## Initialize PS7 over JTAG
 		-e XILINXD_LICENSE_FILE=/root/.Xilinx \
 		$(IMAGE_NAME) bash -c "/opt/Xilinx/Vitis_Embedded/Vitis/$(VIVADO_VERSION)/bin/xsct -eval \
 		'connect; targets -set -filter {name =~ \"APU\"}; \
-		source /proj/hello_proj/hello_proj.gen/sources_1/bd/system/ip/system_processing_system7_0_0/ps7_init.tcl; \
+		source /proj/pynq_z2_rtl/pynq_z2_rtl.gen/sources_1/bd/system/ip/system_processing_system7_0_0/ps7_init.tcl; \
 		ps7_init; ps7_post_config'"
 
 .PHONY: image

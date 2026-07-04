@@ -5,19 +5,13 @@ FPGAs_AdaptiveSoCs_Unified_*.tar.gz
 *.bit
 *.jou
 *.log
-*.backup.jou
-*.backup.log
+*.backup.*
 hs_err_pid*.log
+.Xil/
+NA/
 
-# Project-generated Vivado files
-proj/hello_proj/
-proj/NA/
-proj/*.bit
-proj/*.jou
-proj/*.log
-proj/*.backup.jou
-proj/*.backup.log
-proj/hs_err_pid*.log
+# Generated Vivado projects
+proj/pynq_z2_rtl/
 
 # Local scratch/backups
 *.backup
