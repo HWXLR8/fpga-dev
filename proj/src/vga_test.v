@@ -33,7 +33,7 @@ module vga_test(input            clk,
       if (pixel_tick)
         clk_div <= 0;
       else
-        clk_div = clk_div + 1'b1;
+        clk_div <= clk_div + 1'b1;
 
       if (pixel_tick) begin
          if (h_count == H_TOTAL - 1) begin
@@ -51,9 +51,23 @@ module vga_test(input            clk,
          vga_vsync <= ~vsync_active;
 
          if (active_video) begin
-            vga_r <= 4'hF;
-            vga_g <= 4'h0;
-            vga_b <= 4'h0;
+            if (h_count < 160) begin
+               vga_r <= 4'hF;
+               vga_g <= 4'h0;
+               vga_b <= 4'h0;
+            end else if (h_count < 320) begin
+               vga_r <= 4'h0;
+               vga_g <= 4'hF;
+               vga_b <= 4'h0;
+            end else if (h_count < 480) begin
+               vga_r <= 4'h0;
+               vga_g <= 4'h0;
+               vga_b <= 4'hF;
+            end else if (h_count < 640) begin
+               vga_r <= 4'hF;
+               vga_g <= 4'hF;
+               vga_b <= 4'hF;
+            end
          end else begin
             vga_r <= 4'h0;
             vga_g <= 4'h0;
