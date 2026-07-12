@@ -67,14 +67,14 @@ module fpga_top(
                       .led(led),
                       .uart_tx());
 
-   vga_test vga_test_inst (.clk(clk),
-                           .vga_r(vga_r),
-                           .vga_g(vga_g),
-                           .vga_b(vga_b),
-                           .vga_hsync(vga_hsync),
-                           .vga_vsync(vga_vsync),
-                           .vid_rd_addr(vid_rd_addr),
-                           .vid_rd_data(vid_rd_data));
+   vga vga_inst (.clk(clk),
+                 .vga_r(vga_r),
+                 .vga_g(vga_g),
+                 .vga_b(vga_b),
+                 .vga_hsync(vga_hsync),
+                 .vga_vsync(vga_vsync),
+                 .vid_rd_addr(vid_rd_addr),
+                 .vid_rd_data(vid_rd_data));
 
    vram vram_inst (.clk(clk),
                    .vid_rd_addr(vid_rd_addr),

@@ -1,11 +1,11 @@
-module vga_test(input            clk,
-                output reg [3:0] vga_r,
-                output reg [3:0] vga_g,
-                output reg [3:0] vga_b,
-                output reg       vga_hsync,
-                output reg       vga_vsync,
-                output [12:0]    vid_rd_addr,
-                input [7:0]      vid_rd_data);
+module vga(input            clk,
+           output reg [3:0] vga_r,
+           output reg [3:0] vga_g,
+           output reg [3:0] vga_b,
+           output reg       vga_hsync,
+           output reg       vga_vsync,
+           output [12:0]    vid_rd_addr,
+           input [7:0]      vid_rd_data);
 
    reg [2:0] clk_div = 0;
    wire      pixel_tick = (clk_div == 3'd4);
