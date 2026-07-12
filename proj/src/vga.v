@@ -4,8 +4,8 @@ module vga(input            clk,
            output reg [3:0] vga_b,
            output reg       vga_hsync,
            output reg       vga_vsync,
-           output [12:0]    vid_rd_addr,
-           input [7:0]      vid_rd_data);
+           output [12:0]    vram_rd_addr,
+           input [7:0]      vram_rd_data);
 
    reg [2:0] clk_div = 0;
    wire      pixel_tick = (clk_div == 3'd4);
@@ -42,7 +42,7 @@ module vga(input            clk,
    assign canvas_x = h_count - H_CANVAS_START;
    assign canvas_y = v_count - V_CANVAS_START;
    assign pixel_idx = (canvas_y * H_CANVAS) + canvas_x;
-   assign vid_rd_addr = pixel_idx >> 3; // pixel index / 8 to get byte
+   assign vram_rd_addr = pixel_idx >> 3; // pixel index / 8 to get byte
 
    wire       active_video = (h_count < H_VISIBLE) && (v_count < V_VISIBLE);
    wire       active_canvas = (h_count >= H_CANVAS_START &&
@@ -78,8 +78,8 @@ module vga(input            clk,
          // renderer
          if (active_video && active_canvas) begin
             // extract pixel
-            // vid_rd_data % 8
-            if (vid_rd_data[pixel_idx[2:0]]) begin
+            // vram_rd_data % 8
+            if (vram_rd_data[pixel_idx[2:0]]) begin
                vga_r <= 4'h0;
                vga_g <= 4'hF;
                vga_b <= 4'h0;

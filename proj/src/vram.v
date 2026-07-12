@@ -1,8 +1,8 @@
 module vram (input            clk,
 
              // video read port
-             input [12:0]     vid_rd_addr, // 13 bits = 8192 > 7168
-             output reg [7:0] vid_rd_data,
+             input [12:0]     vram_rd_addr, // 13 bits = 8192 > 7168
+             output reg [7:0] vram_rd_data,
 
              // cpu r/w port
              input [12:0]     cpu_addr,
@@ -26,7 +26,7 @@ module vram (input            clk,
    end // block: init_fb
 
    always @(posedge clk) begin
-      vid_rd_data <= fb[vid_rd_addr];
+      vram_rd_data <= fb[vram_rd_addr];
    end
 
    always @(posedge clk) begin

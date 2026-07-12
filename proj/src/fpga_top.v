@@ -32,8 +32,16 @@ module fpga_top(
 );
 
    wire clk;
-   wire [12:0] vid_rd_addr;
-   wire [7:0]  vid_rd_data;
+
+   // vga -> vram port
+   wire [12:0] vga_vram_rd_addr;
+   wire [7:0]  vga_vram_rd_data;
+
+   // memmap -> vram CPU port
+   wire [12:0] cpu_vram_addr;
+   wire [7:0]  cpu_vram_rd_data;
+   wire [7:0]  cpu_vram_wr_data;
+   wire        cpu_vram_we;
 
   system_wrapper ps_system (
     .FCLK_CLK0_0(clk),
@@ -73,15 +81,27 @@ module fpga_top(
                  .vga_b(vga_b),
                  .vga_hsync(vga_hsync),
                  .vga_vsync(vga_vsync),
-                 .vid_rd_addr(vid_rd_addr),
-                 .vid_rd_data(vid_rd_data));
+                 .vram_rd_addr(vga_vram_rd_addr),
+                 .vram_rd_data(vga_vram_rd_data));
+
+   memmap memmap_inst (.cpu_addr(16'b0),
+                       .cpu_rd_data(),
+                       .cpu_wr_data(8'b0),
+                       .cpu_we(1'b0),
+
+                       .cpu_vram_addr(cpu_vram_addr),
+                       .cpu_vram_rd_data(cpu_vram_rd_data),
+                       .cpu_vram_wr_data(cpu_vram_wr_data),
+                       .cpu_vram_we(cpu_vram_we));
 
    vram vram_inst (.clk(clk),
-                   .vid_rd_addr(vid_rd_addr),
-                   .vid_rd_data(vid_rd_data),
-                   .cpu_addr(13'b0),
-                   .cpu_rd_data(),
-                   .cpu_wr_data(8'b0),
-                   .cpu_we(1'b0));
+                   // vga port
+                   .vram_rd_addr(vga_vram_rd_addr),
+                   .vram_rd_data(vga_vram_rd_data),
+                   // cpu port
+                   .cpu_addr(cpu_vram_addr),
+                   .cpu_rd_data(cpu_vram_rd_data),
+                   .cpu_wr_data(cpu_vram_wr_data),
+                   .cpu_we(cpu_vram_we));
 
 endmodule
