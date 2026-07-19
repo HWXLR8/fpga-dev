@@ -31,8 +31,3 @@ set_property top fpga_top [current_fileset]
 update_compile_order -fileset sources_1
 
 add_files -fileset constrs_1 ./xdc/pynq_z2.xdc
-
-launch_runs impl_1 -to_step write_bitstream -jobs 32
-wait_on_run impl_1
-
-file copy -force ./pynq_z2_rtl/pynq_z2_rtl.runs/impl_1/fpga_top.bit pynq_z2_rtl.bit

@@ -7,6 +7,7 @@ LICENSE_DIR     := $(CURDIR)/xilinx-license
 PROJ_DIR        := $(CURDIR)/proj
 BOARD           := pynq_z2
 BIT_FILE        := $(PROJ_DIR)/pynq_z2_rtl.bit
+XPR             := $(PROJ_DIR)/pynq_z2_rtl/pynq_z2_rtl.xpr
 TCL_SCRIPT      := tcl/build_bitstream.tcl
 SETUP_SCRIPT    := tcl/setup_project.tcl
 LINT_SOURCES    := $(filter-out $(PROJ_DIR)/src/fpga_top.v,$(wildcard $(PROJ_DIR)/src/*.v))
@@ -67,14 +68,17 @@ setup: ## Create Vivado project and block design
 .PHONY: build
 build: lint $(BIT_FILE) ## Build bitstream from existing Vivado project
 
-$(BIT_FILE): $(BUILD_INPUTS)
+$(XPR):
+	@printf "$(RED)Project not found at $(XPR). Run 'make setup' first.$(RESET)\n" >&2; exit 1
+
+$(BIT_FILE): $(BUILD_INPUTS) | $(XPR)
 	@printf "==> Building bitstream...\n"
 	@$(VIVADO_RUN) bash -c "source /opt/Xilinx/Vivado/$(VIVADO_VERSION)/settings64.sh && cd /proj && vivado -mode batch -source $(TCL_SCRIPT)" && \
 		printf "$(GREEN)SUCCESS! bitstream generated: $(BIT_FILE)$(RESET)\n" || \
 		{ rc=$$?; printf "$(RED)FAIL! bitstream build failed$(RESET)\n"; exit $$rc; }
 
 .PHONY: rebuild
-rebuild: clean setup ## Clean and recreate Vivado project from scratch
+rebuild: clean setup build ## Clean, recreate the Vivado project, and build the bitstream
 
 .PHONY: clean
 clean: ## Remove generated project files
