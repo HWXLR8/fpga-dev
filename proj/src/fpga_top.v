@@ -104,11 +104,6 @@ module fpga_top(
    // -------------------------------------------------------------------------
    wire [7:0]  irq_opcode;
 
-   wire        l80_debug_int_pending;
-   wire        l80_debug_uc_end;
-   wire [7:0]  l80_debug_ir;
-
-
    // RST
    reg [1:0]   btn_sync = 2'b00;
    reg [7:0]   por_count = 8'hFF;
@@ -239,12 +234,7 @@ module fpga_top(
                     .inta(l80_inta),
                     .inte(l80_inte),
                     .intr(l80_intr),
-                    .halt(l80_halt),
-                    // XXX
-                    .debug_int_pending(l80_debug_int_pending),
-                    .debug_uc_end(l80_debug_uc_end),
-                    .debug_ir(l80_debug_ir)
-);
+                    .halt(l80_halt));
 
   light8080_adapter l8080_adapter (.vma(l80_vma),
                                    .io(l80_io),
