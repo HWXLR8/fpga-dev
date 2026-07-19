@@ -4,6 +4,9 @@ set_property board_part tul.com.tw:pynq-z2:part0:1.0 [current_project]
 add_files [glob ./src/*.v]
 add_files ./third_party/light8080/verilog/rtl/light8080.v
 add_files ./third_party/light8080/verilog/rtl/micro_rom.v
+add_files -norecurse ./roms/invaders/space_invaders.hex
+set_property file_type {Memory Initialization Files} \
+    [get_files space_invaders.hex]
 
 create_bd_design "system"
 create_bd_cell -type ip -vlnv xilinx.com:ip:processing_system7:5.5 processing_system7_0

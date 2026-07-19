@@ -10,9 +10,13 @@ BIT_FILE        := $(PROJ_DIR)/pynq_z2_rtl.bit
 TCL_SCRIPT      := tcl/build_bitstream.tcl
 SETUP_SCRIPT    := tcl/setup_project.tcl
 LINT_SOURCES    := $(filter-out $(PROJ_DIR)/src/fpga_top.v,$(wildcard $(PROJ_DIR)/src/*.v))
-BUILD_INPUTS    := $(wildcard $(PROJ_DIR)/src/*.v) \
-                   $(wildcard $(PROJ_DIR)/xdc/*.xdc) \
-                   $(PROJ_DIR)/tcl/build_bitstream.tcl
+BUILD_INPUTS := $(wildcard $(PROJ_DIR)/src/*.v) \
+                $(wildcard $(PROJ_DIR)/xdc/*.xdc) \
+                $(PROJ_DIR)/third_party/light8080/verilog/rtl/light8080.v \
+                $(PROJ_DIR)/third_party/light8080/verilog/rtl/micro_rom.v \
+                $(PROJ_DIR)/tcl/build_bitstream.tcl \
+		$(PROJ_DIR)/roms/invaders/space_invaders.hex
+
 # colors
 GREEN := \033[1;32m
 RED   := \033[1;31m

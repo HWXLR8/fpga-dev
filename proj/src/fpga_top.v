@@ -74,6 +74,7 @@ module fpga_top(
    wire [7:0]  l80_data_out;
    wire [7:0]  l80_data_in;
    wire [15:0] l80_addr_out;
+   wire        l80_inta;
 
    // -------------------------------------------------------------------------
    // light8080 adapter <-> memory map
@@ -87,7 +88,58 @@ module fpga_top(
    wire        l80_halt;
    wire        l80_inte;
 
-   assign led = l80_inte;
+   // -------------------------------------------------------------------------
+   // interrupt <-> VGA
+   // -------------------------------------------------------------------------
+   wire        vga_int1;
+   wire        vga_int2;
+
+   // -------------------------------------------------------------------------
+   // interrupt <-> CPU
+   // -------------------------------------------------------------------------
+   wire        l80_intr;
+
+   // -------------------------------------------------------------------------
+   // interrupt <-> light8080 adapter
+   // -------------------------------------------------------------------------
+   wire [7:0]  irq_opcode;
+
+   wire        l80_debug_int_pending;
+   wire        l80_debug_uc_end;
+   wire [7:0]  l80_debug_ir;
+
+
+   // RST
+   reg [1:0]   btn_sync = 2'b00;
+   reg [7:0]   por_count = 8'hFF;
+
+   always @(posedge clk) begin
+      btn_sync <= {btn_sync[0], btn};
+
+      if (por_count != 0)
+        por_count <= por_count - 1'b1;
+   end
+
+   wire rst = btn_sync[1] || (por_count != 0);
+
+
+   // TEST
+   reg  first_fetch_seen;
+   reg  bad_first_fetch;
+
+   always @(posedge clk) begin
+      if (rst) begin
+         first_fetch_seen <= 1'b0;
+         bad_first_fetch <= 1'b0;
+      end else if (l80_fetch && !first_fetch_seen) begin
+         first_fetch_seen <= 1'b1;
+
+         if (l80_addr_out != 16'h0000)
+           bad_first_fetch <= 1'b1;
+      end
+   end
+
+   assign led = bad_first_fetch;
 
 
   system_wrapper ps_system (
@@ -124,7 +176,9 @@ module fpga_top(
                  .vga_hsync(vga_hsync),
                  .vga_vsync(vga_vsync),
                  .vram_rd_addr(vga_vram_rd_addr),
-                 .vram_rd_data(vga_vram_rd_data));
+                 .vram_rd_data(vga_vram_rd_data),
+                 .int1(vga_int1),
+                 .int2(vga_int2));
 
    memmap memmap_inst (.cpu_addr(cpu_addr),
                        .cpu_rd_data(cpu_rd_data),
@@ -164,8 +218,16 @@ module fpga_top(
                    .cpu_wr_data(cpu_vram_wr_data),
                    .cpu_we(cpu_vram_we));
 
+   interrupt int_inst (.clk(clk),
+                       .rst(rst),
+                       .int1(vga_int1),
+                       .int2(vga_int2),
+                       .inta(l80_inta),
+                       .intr(l80_intr),
+                       .irq_opcode(irq_opcode));
+
    light8080 l8080 (.clk(clk),
-                    .reset(btn),
+                    .reset(rst),
                     .addr_out(l80_addr_out),
                     .vma(l80_vma),
                     .io(l80_io),
@@ -174,10 +236,15 @@ module fpga_top(
                     .data_in(l80_data_in),
                     .data_out(l80_data_out),
                     .fetch(l80_fetch),
-                    .inta(),
+                    .inta(l80_inta),
                     .inte(l80_inte),
+                    .intr(l80_intr),
                     .halt(l80_halt),
-                    .intr(1'b0));
+                    // XXX
+                    .debug_int_pending(l80_debug_int_pending),
+                    .debug_uc_end(l80_debug_uc_end),
+                    .debug_ir(l80_debug_ir)
+);
 
   light8080_adapter l8080_adapter (.vma(l80_vma),
                                    .io(l80_io),
@@ -186,10 +253,12 @@ module fpga_top(
                                    .data_out(l80_data_out),
                                    .addr_out(l80_addr_out),
                                    .data_in(l80_data_in),
+                                   .inta(l80_inta),
                                    .memmap_cpu_addr(cpu_addr),
                                    .memmap_cpu_wr_data(cpu_wr_data),
                                    .memmap_cpu_we(cpu_we),
-                                   .memmap_cpu_rd_data(cpu_rd_data));
+                                   .memmap_cpu_rd_data(cpu_rd_data),
+                                   .irq_opcode(irq_opcode));
 
 
 
