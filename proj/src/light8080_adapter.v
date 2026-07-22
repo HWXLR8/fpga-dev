@@ -13,7 +13,8 @@
 // clk :      clock
 
 module light8080_adapter
-  (input         vma,
+  (input         clk,
+   input         vma,
    input         io,
    input         rd,
    input         wr,
@@ -26,7 +27,6 @@ module light8080_adapter
    // inte,
    // inta,
    // reset,
-   // clk
 
    // memmap
    output [15:0] memmap_cpu_addr,
@@ -54,6 +54,12 @@ module light8080_adapter
    assign shifter_data_in = data_out;
    assign shifter_shift = data_out[2:0];
 
+   // register the io read so the select is active on the next cycle
+   reg io_select;
+   always @(posedge clk) begin
+      io_select <= io_rd && io_port == 8'h03;
+   end
+
    // memory
    wire mem_access = vma && !io;
    wire mem_read = mem_access && rd;
@@ -62,7 +68,7 @@ module light8080_adapter
    assign memmap_cpu_addr = addr_out;
    assign memmap_cpu_wr_data = data_out;
    assign data_in = inta ? irq_opcode :
-                    (io_rd && io_port == 8'h03) ? shifter_data_out :
+                    io_select ? shifter_data_out :
                     memmap_cpu_rd_data;
    assign memmap_cpu_we = mem_write;
 

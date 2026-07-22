@@ -252,7 +252,8 @@ assign led = repeated_data_write_seen;
       .halt(l80_halt));
 
    light8080_adapter l8080_adapter
-     (.vma(l80_vma),
+     (.clk(clk),
+      .vma(l80_vma),
       .io(l80_io),
       .rd(l80_rd),
       .wr(l80_wr),
